@@ -24,9 +24,9 @@ import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpRequest;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
+import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
 
 import static io.netty.handler.codec.http.HttpHeaders.Names.*;
 import static io.netty.handler.codec.http.HttpHeaders.Values;
@@ -59,9 +59,12 @@ public class HttpServerHandler extends ChannelInboundHandlerAdapter {
             boolean keepAlive = HttpHeaders.isKeepAlive(req);
             String url=req.getUri();
             System.out.println(url);
-            byte[] content=readFileToByteArray(url);
+            String accept=req.headers().get("accept");
+            System.out.println(accept);
+            byte[] content=readBinaryFileToByteArray(url);
+            System.out.println("长度："+content.length);
             FullHttpResponse response = new DefaultFullHttpResponse(HTTP_1_1, OK, Unpooled.wrappedBuffer(content));
-            response.headers().set(CONTENT_TYPE, "text/html");
+            response.headers().set(CONTENT_TYPE, getContentType(accept));
             response.headers().set(CONTENT_LENGTH, response.content().readableBytes());
 
             if (!keepAlive) {
@@ -99,6 +102,28 @@ public class HttpServerHandler extends ChannelInboundHandlerAdapter {
         return str.getBytes();
     }
 
+    private byte[] readBinaryFileToByteArray(String url) {
+        byte[] byteAray=null;
+        try {
+            File inFile = new File(convertToFilePath(url));
+            FileInputStream fileInputStream = new FileInputStream(inFile);
+            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            int i;
+            //转化为字节数组流
+            while ((i = fileInputStream.read()) != -1) {
+                byteArrayOutputStream.write(i);
+            }
+            // 把文件存在一个字节数组中
+            byteAray = byteArrayOutputStream.toByteArray();
+            fileInputStream.close();
+            byteArrayOutputStream.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return byteAray;
+    }
+
     private String convertToFilePath(String url){
         String path;
         if("/".equals(url)){
@@ -107,5 +132,15 @@ public class HttpServerHandler extends ChannelInboundHandlerAdapter {
             path=rootDir+url;
         }
         return path;
+    }
+
+    private String getContentType(String accept){
+        String[] strArray=accept.split(",");
+        if(strArray.length>0){
+            if(strArray[0].equals("image/webp")){
+                return "image/jpeg";
+            }
+        }
+        return "text/html";
     }
 }

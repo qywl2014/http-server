@@ -21,7 +21,8 @@ public class App
     private static final int PORT=8080;
 
     public static void main(String[] args) throws Exception {
-        final String rootDir=args[0]+"/ROOT";
+//        final String rootDir=args[0]+"/ROOT";
+        final String rootDirTest="C:\\Users\\Administrator\\Desktop\\idea\\http-server\\src\\main\\resources";
         EventLoopGroup bossGroup = new NioEventLoopGroup(1);
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         try {
@@ -35,7 +36,7 @@ public class App
                         public void initChannel(SocketChannel ch) {
                             ChannelPipeline p = ch.pipeline();
                             p.addLast(new HttpServerCodec());
-                            p.addLast(new HttpServerHandler(rootDir));
+                            p.addLast(new HttpServerHandler(rootDirTest));
                         }
                     });
             Channel ch = b.bind(PORT).sync().channel();
