@@ -64,7 +64,6 @@ public class HttpServerHandler extends ChannelInboundHandlerAdapter {
             }
             boolean keepAlive = HttpHeaders.isKeepAlive(req);
             String url=req.getUri();
-            req.e
             System.out.println(url);
             String accept=req.headers().get("accept");
             System.out.println(accept);
