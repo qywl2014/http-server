@@ -23,10 +23,16 @@ import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpRequest;
+import org.springframework.web.client.RestTemplate;
 
 import java.io.*;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLEncoder;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static io.netty.handler.codec.http.HttpHeaders.Names.*;
 import static io.netty.handler.codec.http.HttpHeaders.Values;
@@ -58,6 +64,7 @@ public class HttpServerHandler extends ChannelInboundHandlerAdapter {
             }
             boolean keepAlive = HttpHeaders.isKeepAlive(req);
             String url=req.getUri();
+            req.e
             System.out.println(url);
             String accept=req.headers().get("accept");
             System.out.println(accept);
@@ -73,6 +80,29 @@ public class HttpServerHandler extends ChannelInboundHandlerAdapter {
                 response.headers().set(CONNECTION, Values.KEEP_ALIVE);
                 ctx.write(response);
             }
+
+            try{
+                String[] urlSplitArray=url.split("\\?");
+                String host=urlSplitArray[0];
+                String querySP=null;
+                if(urlSplitArray.length>0){
+                    querySP=urlSplitArray[1];
+                    querySP=URLEncoder.encode(querySP,"UTF-8");
+                }
+//                String
+//                URL targetUrl = new URL();
+//                HttpURLConnection httpURLConnection = (HttpURLConnection) targetUrl.openConnection();
+//                httpURLConnection.setRequestMethod("GET");
+//                httpURLConnection.setConnectTimeout(10000);
+//                httpURLConnection.setReadTimeout(5000);
+//                httpURLConnection.setDoInput(true);
+//                for(Map.Entry<String,String> head:req.headers()){
+//                    httpURLConnection.setRequestProperty(head.getKey(),head.getValue());
+//                }
+            }catch(Exception e){
+
+            }
+
         }
     }
 

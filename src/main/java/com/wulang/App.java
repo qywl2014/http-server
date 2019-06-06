@@ -10,7 +10,6 @@ import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 
-import javax.sound.sampled.Port;
 
 /**
  * Hello world!
@@ -18,11 +17,19 @@ import javax.sound.sampled.Port;
  */
 public class App 
 {
-    private static final int PORT=8080;
+    private static int PORT=8080;
 
     public static void main(String[] args) throws Exception {
-//        final String rootDir=args[0]+"/ROOT";
-        final String rootDirTest="C:\\Users\\Administrator\\Desktop\\idea\\http-server\\src\\main\\resources";
+        final String rootDir;
+        if(args.length!=0){
+            rootDir=args[0]+"/ROOT";
+        }else{
+            rootDir="";
+        }
+        if(args.length>1){
+            PORT=Integer.parseInt(args[1]);
+        }
+//        final String rootDirTest="C:\\Users\\Administrator\\Desktop\\idea\\http-server\\src\\main\\resources";
         EventLoopGroup bossGroup = new NioEventLoopGroup(1);
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         try {
@@ -36,7 +43,7 @@ public class App
                         public void initChannel(SocketChannel ch) {
                             ChannelPipeline p = ch.pipeline();
                             p.addLast(new HttpServerCodec());
-                            p.addLast(new HttpServerHandler(rootDirTest));
+                            p.addLast(new HttpServerHandler(rootDir));
                         }
                     });
             Channel ch = b.bind(PORT).sync().channel();
