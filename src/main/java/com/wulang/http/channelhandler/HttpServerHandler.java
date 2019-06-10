@@ -41,12 +41,12 @@ import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
 public class HttpServerHandler extends ChannelInboundHandlerAdapter {
-    private static final byte[] CONTENT = { 'H', 'e', 'l', 'l', 'o', ' ', 'W', 'o', 'r', 'l', 'd' };
+    private static final byte[] CONTENT = {'H', 'e', 'l', 'l', 'o', ' ', 'W', 'o', 'r', 'l', 'd'};
 
     private String rootDir;
 
-    public HttpServerHandler(String rootDir){
-        this.rootDir=rootDir;
+    public HttpServerHandler(String rootDir) {
+        this.rootDir = rootDir;
     }
 
     @Override
@@ -63,14 +63,18 @@ public class HttpServerHandler extends ChannelInboundHandlerAdapter {
                 ctx.write(new DefaultFullHttpResponse(HTTP_1_1, CONTINUE));
             }
             boolean keepAlive = HttpHeaders.isKeepAlive(req);
-            String url=req.getUri();
-            System.out.println(url);
-            String accept=req.headers().get("accept");
-            System.out.println(accept);
-            byte[] content=readBinaryFileToByteArray(url);
-            System.out.println("长度："+content.length);
-            FullHttpResponse response = new DefaultFullHttpResponse(HTTP_1_1, OK, Unpooled.wrappedBuffer(content));
-            response.headers().set(CONTENT_TYPE, getContentType(accept));
+            String url = req.getUri();
+            if(req.headers().get("Host").contains("google")){
+                return;
+            }
+            System.out.println("uri:" + url);
+//            String accept = req.headers().get("accept");
+//            System.out.println(accept);
+//            byte[] content=readBinaryFileToByteArray(url);
+//            System.out.println("长度："+content.length);
+//            FullHttpResponse response = new DefaultFullHttpResponse(HTTP_1_1, OK, Unpooled.wrappedBuffer("hello".getBytes()));
+            FullHttpResponse response = new DefaultFullHttpResponse(HTTP_1_1, OK, Unpooled.wrappedBuffer(httpClient(req).getBytes()));
+//            response.headers().set(CONTENT_TYPE, getContentType(accept));
             response.headers().set(CONTENT_LENGTH, response.content().readableBytes());
 
             if (!keepAlive) {
@@ -79,30 +83,67 @@ public class HttpServerHandler extends ChannelInboundHandlerAdapter {
                 response.headers().set(CONNECTION, Values.KEEP_ALIVE);
                 ctx.write(response);
             }
-
-            try{
-                String[] urlSplitArray=url.split("\\?");
-                String host=urlSplitArray[0];
-                String querySP=null;
-                if(urlSplitArray.length>0){
-                    querySP=urlSplitArray[1];
-                    querySP=URLEncoder.encode(querySP,"UTF-8");
-                }
-//                String
-//                URL targetUrl = new URL();
-//                HttpURLConnection httpURLConnection = (HttpURLConnection) targetUrl.openConnection();
-//                httpURLConnection.setRequestMethod("GET");
-//                httpURLConnection.setConnectTimeout(10000);
-//                httpURLConnection.setReadTimeout(5000);
-//                httpURLConnection.setDoInput(true);
-//                for(Map.Entry<String,String> head:req.headers()){
-//                    httpURLConnection.setRequestProperty(head.getKey(),head.getValue());
-//                }
-            }catch(Exception e){
-
+            for (Map.Entry<String, String> head : req.headers()) {
+                System.out.println(head.getKey() + "::" + head.getValue());
             }
 
         }
+    }
+
+    private String httpClient(HttpRequest req) {
+        try {
+//            String finalUrlStr=encodeParameters(req, false);
+//            System.out.println("urlStr::" + finalUrlStr);
+            URL targetUrl = new URL(req.getUri());
+            HttpURLConnection httpURLConnection = (HttpURLConnection) targetUrl.openConnection();
+            httpURLConnection.setRequestMethod("GET");
+            httpURLConnection.setConnectTimeout(10000);
+            httpURLConnection.setReadTimeout(5000);
+            httpURLConnection.setDoInput(true);
+
+            InputStream in = httpURLConnection.getInputStream();
+//        httpURLConnection.setDoInput(true);
+            BufferedReader rd = new BufferedReader(new InputStreamReader(in, "UTF-8"));
+            StringBuilder sB = new StringBuilder();
+            String tempLine = null;
+            while ((tempLine = rd.readLine()) != null) {
+                sB.append(tempLine);
+            }
+            System.out.println(sB);
+            rd.close();
+            return sB.toString();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    private String encodeParameters(HttpRequest req, boolean ifNeedEncode) {
+        try {
+            String host = "10.0.3.173:9090";
+//            String host=req.headers().get("Host");
+            if (!ifNeedEncode) {
+                return "http://" + host + req.getUri();
+            }
+            String[] urlSplitArray = req.getUri().split("\\?");
+            String path = urlSplitArray[0];
+            String finalUrlStr = "http://" + host + path;
+            String querySP = null;
+            if (urlSplitArray.length > 1) {
+                finalUrlStr = finalUrlStr + "?";
+                querySP = urlSplitArray[1];
+                String[] querySPArray = querySP.split("&");
+                for (String sP : querySPArray) {
+                    String[] array = sP.split("=");
+                    finalUrlStr = finalUrlStr + array[0] + "=" + URLEncoder.encode(array[1], "UTF-8") + "&";
+                }
+                finalUrlStr = finalUrlStr.substring(0, finalUrlStr.length() - 1);
+            }
+            return finalUrlStr;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     @Override
@@ -119,20 +160,20 @@ public class HttpServerHandler extends ChannelInboundHandlerAdapter {
             BufferedReader bReader = new BufferedReader(reader);
             StringBuilder sb = new StringBuilder();
             String s;
-            while ((s =bReader.readLine()) != null) {
+            while ((s = bReader.readLine()) != null) {
                 sb.append(s + "\n");
             }
             bReader.close();
             str = sb.toString();
-        }catch (Exception e){
-            str="error";
+        } catch (Exception e) {
+            str = "error";
             e.printStackTrace();
         }
         return str.getBytes();
     }
 
     private byte[] readBinaryFileToByteArray(String url) {
-        byte[] byteAray=null;
+        byte[] byteAray = null;
         try {
             File inFile = new File(convertToFilePath(url));
             FileInputStream fileInputStream = new FileInputStream(inFile);
@@ -153,20 +194,20 @@ public class HttpServerHandler extends ChannelInboundHandlerAdapter {
         return byteAray;
     }
 
-    private String convertToFilePath(String url){
+    private String convertToFilePath(String url) {
         String path;
-        if("/".equals(url)){
-            path=rootDir+"/index.html";
-        }else{
-            path=rootDir+url;
+        if ("/".equals(url)) {
+            path = rootDir + "/index.html";
+        } else {
+            path = rootDir + url;
         }
         return path;
     }
 
-    private String getContentType(String accept){
-        String[] strArray=accept.split(",");
-        if(strArray.length>0){
-            if(strArray[0].equals("image/webp")){
+    private String getContentType(String accept) {
+        String[] strArray = accept.split(",");
+        if (strArray.length > 0) {
+            if (strArray[0].equals("image/webp")) {
                 return "image/jpeg";
             }
         }
